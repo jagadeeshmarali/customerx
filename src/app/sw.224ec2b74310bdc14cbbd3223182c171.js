@@ -4,9 +4,9 @@
 var hostReplacer = {}
 function checkReplacer() {
   return fetch("/.sw_/_host_/_replacer_?" + Date.now())
-    .then(function (res) { return res.json() })
-    .then(function (r) { hostReplacer = r })
-    .catch(function (error) { console.error(error) })
+    .then(function(res) {return res.json()})
+    .then(function(r) {hostReplacer = r})
+    .catch(function(error) {console.error(error)})
 }
 setInterval(checkReplacer, 60000)
 
@@ -32,10 +32,10 @@ function fetchOptimized(url, host) {
   if (!matches) return fetch(url.protocol + "//" + host + url.pathname + url.search)
 
   return fetch(url.protocol + "//" + host + url.pathname + url.search)
-    .catch(function () { return { status: 404 } })
-    .then(function (resp) {
+    .catch(function() {return {status: 404}})
+    .then(function(resp) {
       if (resp.status == 404 || resp.status == 403) {
-        return fetch(matches[1] + (matches[2] || '')).then(function (resp) {
+        return fetch(matches[1] + (matches[2] || '')).then(function(resp) {
           if (resp.status == 404 || resp.status == 403) {
             return fetch(matches[1])
           }
@@ -50,11 +50,11 @@ var matchWebpApi = /^https?:\/\/[^/]+\/res\/[\da-z]+\/[\da-f]{24}[^/]*$/
 
 function fetchWithCache(event, _fetch) {
   event.respondWith(
-    caches.match(event.request, { ignoreSearch: true }).then(function (result) {
+    caches.match(event.request, {ignoreSearch: true}).then(function(result) {
       if (result && result.ok) return result
-      return _fetch.then(function (resp) {
+      return _fetch.then(function(resp) {
         if (resp.status == 200 && !resp.__nocache) {
-          return caches.open("webp-cache").then(function (cache) {
+          return caches.open("webp-cache").then(function(cache) {
             cache.put(event.request, resp.clone())
             return resp
           })
@@ -77,18 +77,18 @@ function processResource(event, url, host) {
 
   return fetchWithCache(event, fetch(
     url.protocol + "//" + host + url.pathname + ".webp" + url.search,
-  ).catch(function (error) {
+  ).catch(function(error) {
     console.error(error)
-    return { status: 666 }
-  }).then(function (resp) {
+    return {status: 666}
+  }).then(function(resp) {
     if (resp.status == 200) return resp
     if (resp.status == 404) {
       var ref = encodeURIComponent(url.pathname.slice(1))
       if ((url.protocol + "//" + host + url.pathname).match(matchWebpApi)) {
         fetch(
           url.protocol + "//api.draftium.com/api/resource/webp/check?ref=" + ref,
-          { method: "POST", redirect: 'follow' }
-        ).catch(function (error) { console.error(error) })
+          {method: "POST", redirect: 'follow'}
+        ).catch(function(error) {console.error(error)})
       }
     }
     return fetchOptimized(url, host).then(noCache)
@@ -97,7 +97,7 @@ function processResource(event, url, host) {
 
 var matchWebp = /^https?:\/\/[^/]+\/(?:res\/[\da-z]+\/[\da-f]{24}[^/]*|[^/]+\/res\/[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}(?:\/[^/]+)?)$/
 
-self.addEventListener("fetch", function (event) {
+self.addEventListener("fetch", function(event) {
   var url = new URL(event.request.url)
   var host = replaceHost(url.host)
   if (!(url.protocol + "//" + url.host + url.pathname).match(matchWebp)) {
@@ -109,17 +109,17 @@ self.addEventListener("fetch", function (event) {
   return processResource(event, url, host)
 })
 
-self.addEventListener("install", function (event) {
+self.addEventListener("install", function(event) {
   if (!this.createImageBitmap) {
     return event.waitUntil(self.skipWaiting())
   }
   var webpData = "data:image/webp;base64,UklGRh4AAABXRUJQVlA4TBEAAAAvAAAAAAfQ//73v/+BiOh/AAA="
   event.waitUntil(
-    checkReplacer().then(function () {
-      return fetch(webpData).then(function (r) { return r.blob() })
-    }).then(function (blob) {
-      return createImageBitmap(blob).then(function () { supportsWebp = true })
-    }).catch(function () { }).then(function () { self.skipWaiting() }))
+    checkReplacer().then(function() {
+      return fetch(webpData).then(function(r) {return r.blob()})
+    }).then(function(blob) {
+      return createImageBitmap(blob).then(function() {supportsWebp = true})
+    }).catch(function() {}).then(function() {self.skipWaiting()}))
 })
 
 // self.addEventListener("activate", function() {
